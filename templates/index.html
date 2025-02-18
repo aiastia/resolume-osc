@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resolume 控制系统</title>
+  <!-- 引入 Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Resolume 控制系统</a>
+    </div>
+  </nav>
+
+  <!-- 主体内容 -->
+  <div class="container mt-4">
+    <h2>预设控制操作</h2>
+    <div class="row mb-3">
+      <div class="col-12 col-md-6">
+        <!-- 断开连接 与 链接 -->
+        <button class="btn btn-danger w-100 mb-2" onclick="sendMessage('/composition/layers/2/clips/6/connect', 1)">连接6</button>
+        <button class="btn btn-success w-100 mb-2" onclick="sendMessage('/composition/layers/2/clips/5/connect', 1)">链接5</button>
+        <!-- 播放 与 暂停 -->
+        <button class="btn btn-primary w-100 mb-2" onclick="sendMessage('/composition/selectedclip/transport/position', 0)">进度0</button>
+        <button class="btn btn-warning w-100 mb-2" onclick="sendMessage('/composition/selectedclip/transport/position', 0.99)">进度100</button>
+        <!-- 设置透明度 -->
+        <button class="btn btn-info w-100 mb-2" onclick="sendMessage('/composition/layers/2/video/opacity', 0.25)">透明度 0.25</button>
+        <button class="btn btn-info w-100 mb-2" onclick="sendMessage('/composition/layers/2/video/opacity', 1)">透明度 1</button>
+        <!-- 播放方向控制：1 后退 2 播放 3 暂停 -->
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/selectedclip/transport/position/behaviour/playdirection', 0)">设置播放方向 - 后退 (1)</button>
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/selectedclip/transport/position/behaviour/playdirection', 1)">设置播放方向 - 播放 (2)</button>
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/selectedclip/transport/position/behaviour/playdirection', 2)">设置播放方向 - 暂停 (3)</button>
+        <!-- 播放方向模式：1 后退 2 播放 3 暂停 -->
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/layers/2/clips/6/transport/position/behaviour/playmode', 0)">设置播放模式 - 循环 (1)</button>
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/layers/2/clips/6/transport/position/behaviour/playmode', 2)">设置播放模式 - 播放一次 (2)</button>
+        <button class="btn btn-secondary w-100 mb-2" onclick="sendMessage('/composition/layers/2/clips/6/transport/position/behaviour/playmode', 3)">设置播放模式 - 播放一次停顿 (3)</button>
+      </div>
+
+    </div>
+
+    <h2>自定义 OSC 消息</h2>
+    <form id="customForm">
+      <div class="mb-3">
+        <label for="address" class="form-label">OSC 地址</label>
+        <input type="text" class="form-control" id="address" placeholder="/example/address" required>
+      </div>
+      <div class="mb-3">
+        <label for="value" class="form-label">值 (数字或字符串)</label>
+        <input type="text" class="form-control" id="value" placeholder="例如: 1 或 hello" required>
+      </div>
+      <button type="submit" class="btn btn-primary">发送自定义消息</button>
+    </form>
+
+    <div id="messageBox" class="mt-4"></div>
+  </div>
+
+  <!-- 引入 Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 统一发送消息的函数
+    function sendMessage(address, value) {
+      fetch('/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address: address, value: value })
+      })
+      .then(response => response.json())
+      .then(data => {
+        showMessage(data.message, data.success);
+      })
+      .catch(error => {
+        showMessage('请求失败：' + error, false);
+      });
+    }
+
+    // 显示返回消息
+    function showMessage(message, isSuccess) {
+      const messageBox = document.getElementById('messageBox');
+      messageBox.innerHTML = '<div class="alert ' + (isSuccess ? 'alert-success' : 'alert-danger') + '">' + message + '</div>';
+    }
+
+    // 处理自定义表单提交
+    document.getElementById('customForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const address = document.getElementById('address').value;
+      let value = document.getElementById('value').value;
+      // 如果输入为数字，则转换为数字类型
+      if (!isNaN(value)) {
+        value = Number(value);
+      }
+      sendMessage(address, value);
+    });
+  </script>
+</body>
+</html>
